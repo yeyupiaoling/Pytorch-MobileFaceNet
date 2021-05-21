@@ -1,0 +1,5 @@
+*.pyc
+.idea/
+dataset/*
+!dataset/lfw_test.zip
+save_model/

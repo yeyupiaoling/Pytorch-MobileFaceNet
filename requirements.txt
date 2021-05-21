@@ -1,0 +1,8 @@
+torch==1.8.1
+opencv-python~=4.5.2.52
+numpy~=1.19.2
+tqdm~=4.59.0
+scikit-learn~=0.24.1
+pillow~=8.1.2
+torchsummary~=1.5.1
+scikit-image~=0.18.1
