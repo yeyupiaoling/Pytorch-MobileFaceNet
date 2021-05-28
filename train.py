@@ -22,7 +22,7 @@ add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('gpu',              str,    '0,1',                    '训练使用的GPU序号')
 add_arg('batch_size',       int,    64,                       '训练的批量大小')
 add_arg('num_workers',      int,    2,                        '读取数据的线程数量')
-add_arg('num_epoch',        int,    100,                      '训练的轮数')
+add_arg('num_epoch',        int,    50,                       '训练的轮数')
 add_arg('num_classes',      int,    85742,                    '分类的类别数量')
 add_arg('learning_rate',    float,  1e-1,                     '初始学习率的大小')
 add_arg('weight_decay',     float,  5e-4,                     'weight_decay的大小')
@@ -32,6 +32,7 @@ add_arg('optimizer',        str,    'sgd',                    '所使用的优�
 add_arg('train_root_path',  str,    'dataset/images',         '训练数据的根目录')
 add_arg('test_list_path',   str,    'dataset/lfw_test.txt',   '测试数据的数据列表路径')
 add_arg('save_model',       str,    'save_model/',            '模型保存的路径')
+add_arg('pretrained_model', str,    None,                     '预训练模型的路径，当为None则不使用预训练模型')
 args = parser.parse_args()
 
 
@@ -45,13 +46,18 @@ def test(args, model):
     return accuracy
 
 
-def save_model(model, save_path, epoch_id):
+def save_model(model, metric_fc, optimizer, save_path, epoch_id):
+    # 保存模型参数和优化方法参数
+    torch.save(model.module.state_dict(), os.path.join(save_path, 'model_params.pth'))
+    torch.save(metric_fc.module.state_dict(), os.path.join(save_path, 'metric_fc_params.pth'))
+    torch.save(optimizer.state_dict(), os.path.join(save_path, 'optimizer.pth'))
+    # 保存整个模型和参数
     if os.path.exists(os.path.join(save_path, '%s_%d.pth' % (args.use_model, epoch_id - 3))):
         os.remove(os.path.join(save_path, '%s_%d.pth' % (args.use_model, epoch_id - 3)))
     save_path = os.path.join(save_path, '%s_%d.pth' % (args.use_model, epoch_id))
     if not os.path.exists(os.path.dirname(save_path)):
         os.makedirs(os.path.dirname(save_path))
-    torch.save(model, save_path)
+    torch.jit.save(torch.jit.script(model.module), save_path)
 
 
 def train():
@@ -88,16 +94,21 @@ def train():
                               batch_size=args.batch_size,
                               shuffle=True,
                               num_workers=args.num_workers)
+    # 加载模型参数和优化方法参数
+    if args.pretrained_model:
+        model.module.load_state_dict(torch.load(os.path.join(args.pretrained_model, 'model_params.pth')))
+        metric_fc.module.load_state_dict(torch.load(os.path.join(args.pretrained_model, 'metric_fc_params.pth')))
+        optimizer.load_state_dict(torch.load(os.path.join(args.pretrained_model, 'optimizer.pth')))
+        print('成功加载模型参数和优化方法参数')
+
     # 开始训练
     for epoch_id in range(args.num_epoch):
-        model.train()
         for batch_id, data in enumerate(train_loader):
             data_input, label = data
             data_input = data_input.to(device)
             label = label.to(device).long()
             feature = model(data_input)
             output = metric_fc(feature, label)
-
             loss = criterion(output, label)
             optimizer.zero_grad()
             loss.backward()
@@ -113,10 +124,11 @@ def train():
         # 开始评估
         model.eval()
         accuracy = test(args, model)
+        model.train()
         print('[{}] Test epoch {} Accuracy {:.5}'.format(datetime.now(), epoch_id, accuracy))
 
         # 保存模型
-        save_model(model, args.save_model, epoch_id)
+        save_model(model, metric_fc, optimizer, args.save_model, epoch_id)
 
 
 if __name__ == '__main__':

@@ -2,4 +2,6 @@
 .idea/
 dataset/*
 !dataset/lfw_test.zip
+!dataset/test.jpg
 save_model/
+simsun.ttc

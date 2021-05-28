@@ -37,23 +37,32 @@ class LinearBlock(Module):
 
 
 class DepthWise(Module):
-    def __init__(self, in_c, out_c, residual=False, kernel=(3, 3), stride=(2, 2), padding=(1, 1), groups=1):
+    def __init__(self, in_c, out_c, kernel=(3, 3), stride=(2, 2), padding=(1, 1), groups=1):
         super(DepthWise, self).__init__()
         self.conv = ConvBlock(in_c, out_c=groups, kernel=(1, 1), padding=(0, 0), stride=(1, 1))
         self.conv_dw = ConvBlock(groups, groups, groups=groups, kernel=kernel, padding=padding, stride=stride)
         self.project = LinearBlock(groups, out_c, kernel=(1, 1), padding=(0, 0), stride=(1, 1))
-        self.residual = residual
 
     def forward(self, x):
-        if self.residual:
-            short_cut = x
         x = self.conv(x)
         x = self.conv_dw(x)
         x = self.project(x)
-        if self.residual:
-            output = short_cut + x
-        else:
-            output = x
+        return x
+
+
+class DepthWiseResidual(Module):
+    def __init__(self, in_c, out_c, kernel=(3, 3), stride=(2, 2), padding=(1, 1), groups=1):
+        super(DepthWiseResidual, self).__init__()
+        self.conv = ConvBlock(in_c, out_c=groups, kernel=(1, 1), padding=(0, 0), stride=(1, 1))
+        self.conv_dw = ConvBlock(groups, groups, groups=groups, kernel=kernel, padding=padding, stride=stride)
+        self.project = LinearBlock(groups, out_c, kernel=(1, 1), padding=(0, 0), stride=(1, 1))
+
+    def forward(self, x):
+        short_cut = x
+        x = self.conv(x)
+        x = self.conv_dw(x)
+        x = self.project(x)
+        output = short_cut + x
         return output
 
 
@@ -63,7 +72,7 @@ class Residual(Module):
         modules = []
         for _ in range(num_block):
             modules.append(
-                DepthWise(c, c, residual=True, kernel=kernel, padding=padding, stride=stride, groups=groups))
+                DepthWiseResidual(c, c, kernel=kernel, padding=padding, stride=stride, groups=groups))
         self.model = Sequential(*modules)
 
     def forward(self, x):
