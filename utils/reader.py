@@ -24,7 +24,7 @@ def random_color(img, lower=0.7, upper=1.3):
     return ImageEnhance.Color(img).enhance(e)
 
 
-def process(img, image_size=112, is_gray=False, is_train=False):
+def process(img, image_size=112, is_train=False):
     if isinstance(img, str):
         img = cv2.imread(img)
     img = cv2.resize(img, (image_size, image_size))
@@ -41,9 +41,6 @@ def process(img, image_size=112, is_gray=False, is_train=False):
             img = ops[0](img)
         # 转回cv2
         img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-    if is_gray:
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        img = img[:, :, np.newaxis]
     img = img.transpose((2, 0, 1))
     img = (img - 127.5) / 127.5
     return img
@@ -51,9 +48,9 @@ def process(img, image_size=112, is_gray=False, is_train=False):
 
 class Dataset(data.Dataset):
 
-    def __init__(self, root_path, is_train=True, input_shape=(3, 112, 112)):
+    def __init__(self, root_path, is_train=True, image_size=112):
         self.is_train = is_train
-        self.input_shape = input_shape
+        self.image_size = image_size
         self.data = []
         person_id = 0
         persons_dir = os.listdir(root_path)
@@ -63,11 +60,12 @@ class Dataset(data.Dataset):
                 image_path = os.path.join(root_path, person_dir, image)
                 self.data.append([image_path, person_id])
             person_id += 1
+        self.num_classes = len(persons_dir)
         random.shuffle(self.data)
 
     def __getitem__(self, index):
         img_path, label = self.data[index]
-        img = process(img_path, is_gray=self.input_shape[0] == 1, is_train=self.is_train)
+        img = process(img_path, image_size=self.image_size, is_train=self.is_train)
         img = np.array(img, dtype='float32')
         label = np.int32(label)
         return img, label

@@ -3,5 +3,7 @@
 dataset/*
 !dataset/lfw_test.zip
 !dataset/test.jpg
-save_model/
+save_model/*
+!save_model/mtcnn
+!save_model/mobilefacenet.pth
 simsun.ttc

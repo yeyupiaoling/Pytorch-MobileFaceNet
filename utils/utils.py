@@ -52,28 +52,12 @@ def load_image(img_path):
     return image
 
 
-def load_image_gray(img_path):
-    image = cv2.imread(img_path, 0)
-    if image is None:
-        return None
-    image = cv2.resize(image, (112, 112))
-    image = np.dstack((image, np.fliplr(image)))
-    image = image.transpose((2, 0, 1))
-    image = image[:, np.newaxis, :, :]
-    image = image.astype(np.float32, copy=False)
-    image = (image - 127.5) / 127.5
-    return image
-
-
 # 获取图像特征
-def get_features(model, test_list, batch_size=32, is_gray=False):
+def get_features(model, test_list, batch_size=32):
     images = None
     features = None
     for i, img_path in enumerate(tqdm(test_list)):
-        if is_gray:
-            image = load_image_gray(img_path)
-        else:
-            image = load_image(img_path)
+        image = load_image(img_path)
         assert image is not None, '{} 图片错误'.format(img_path)
 
         if images is None:
