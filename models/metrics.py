@@ -35,4 +35,15 @@ class ArcNet(nn.Module):
         one_hot = torch.nn.functional.one_hot(label, self.class_dim)
         output = (one_hot * cos_theta_m) + (torch.abs((1.0 - one_hot)) * cos_theta)
         output *= self.s
+        # 简单的分类方法，学习率需要设置为0.1
+        # cosine = self.cosine_sim(feature, self.weight)
+        # one_hot = torch.nn.functional.one_hot(label, self.class_dim)
+        # output = self.s * (cosine - one_hot * self.m)
         return output
+
+    @staticmethod
+    def cosine_sim(feature, weight, eps=1e-8):
+        ip = torch.mm(feature, weight)
+        w1 = torch.norm(feature, 2, dim=1)
+        w2 = torch.norm(weight, 2, dim=0)
+        return ip / torch.outer(w1, w2).clip(min=eps, max=1e3)
