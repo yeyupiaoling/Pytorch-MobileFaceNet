@@ -104,7 +104,7 @@ class Predictor:
         if isinstance(img, np.ndarray):
             img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         draw = ImageDraw.Draw(img)
-        font = ImageFont.truetype('simsun.ttc', size)
+        font = ImageFont.truetype('simfang.ttf', size)
         draw.text((left, top), text, color, font=font)
         return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 

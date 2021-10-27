@@ -1,10 +1,48 @@
 import os
 import random
+import mmap
 
 import cv2
 import numpy as np
 from PIL import Image, ImageEnhance
 from torch.utils import data
+
+
+class ImageData(object):
+    def __init__(self, data_path):
+        self.offset_dict = {}
+        for line in open(data_path + '.header', 'rb'):
+            key, val_pos, val_len = line.split('\t'.encode('ascii'))
+            self.offset_dict[key] = (int(val_pos), int(val_len))
+        self.fp = open(data_path + '.data', 'rb')
+        self.m = mmap.mmap(self.fp.fileno(), 0, access=mmap.ACCESS_READ)
+        print('正在加载数据标签...')
+        # 获取label
+        self.label = {}
+        persons_id = set()
+        label_path = data_path + '.label'
+        for line in open(label_path, 'rb'):
+            key, label = line.split(b'\t')
+            persons_id.add(int(label))
+            self.label[key] = int(label)
+        self.num_classes = len(persons_id)
+        print('数据加载完成，总数据量为：%d, 类别数量为：%d' % (len(self.label), self.num_classes))
+
+    # 获取图像数据
+    def get_img(self, key):
+        p = self.offset_dict.get(key, None)
+        if p is None:
+            return None
+        val_pos, val_len = p
+        return self.m[val_pos:val_pos + val_len]
+
+    # 获取图像标签
+    def get_label(self, key):
+        return self.label.get(key)
+
+    # 获取所有keys
+    def get_keys(self):
+        return self.label.keys()
 
 
 def random_brightness(img, lower=0.7, upper=1.3):
@@ -49,26 +87,26 @@ def process(img, image_size=112, is_train=False):
 class Dataset(data.Dataset):
 
     def __init__(self, root_path, is_train=True, image_size=112):
+        self.imageData = ImageData(root_path)
+        self.keys = self.imageData.get_keys()
+        self.keys = list(self.keys)
+        np.random.shuffle(self.keys)
         self.is_train = is_train
         self.image_size = image_size
-        self.data = []
-        person_id = 0
-        persons_dir = os.listdir(root_path)
-        for person_dir in persons_dir:
-            images = os.listdir(os.path.join(root_path, person_dir))
-            for image in images:
-                image_path = os.path.join(root_path, person_dir, image)
-                self.data.append([image_path, person_id])
-            person_id += 1
-        self.num_classes = len(persons_dir)
-        random.shuffle(self.data)
+        self.num_classes = self.imageData.num_classes
 
     def __getitem__(self, index):
-        img_path, label = self.data[index]
-        img = process(img_path, image_size=self.image_size, is_train=self.is_train)
+        key = self.keys[index]
+        img = self.imageData.get_img(key)
+        assert (img is not None)
+        label = self.imageData.get_label(key)
+        assert (label is not None)
+        img = np.fromstring(img, dtype=np.uint8)
+        img = cv2.imdecode(img, cv2.IMREAD_COLOR)
+        img = process(img, image_size=self.image_size, is_train=self.is_train)
+        label = np.array([label], np.int64)
         img = np.array(img, dtype='float32')
-        label = np.int32(label)
-        return img, label
+        return img, np.array(int(label), dtype=np.int64)
 
     def __len__(self):
-        return len(self.data)
+        return len(self.keys)
