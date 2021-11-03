@@ -1,6 +1,7 @@
 import argparse
 import functools
 import os
+import time
 
 import cv2
 import numpy as np
@@ -14,7 +15,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('image_path',               str,     'dataset/test.jpg',                 '预测图片路径')
 add_arg('face_db_path',             str,     'face_db',                          '人脸库路径')
-add_arg('threshold',                float,   0.7,                                '判断相识度的阈值')
+add_arg('threshold',                float,   0.6,                                '判断相识度的阈值')
 add_arg('mobilefacenet_model_path', str,     'save_model/mobilefacenet.pth',     'MobileFaceNet预测模型的路径')
 add_arg('mtcnn_model_path',         str,     'save_model/mtcnn',                 'MTCNN预测模型的路径')
 args = parser.parse_args()
@@ -81,12 +82,16 @@ class Predictor:
 
     def recognition(self, image_path):
         img = cv2.imdecode(np.fromfile(image_path, dtype=np.uint8), -1)
+        s = time.time()
         imgs, boxes = self.mtcnn.infer_image(img)
+        print('人脸检测时间：%dms' % int((time.time() - s) * 1000))
         if imgs is None:
             return None, None
         imgs = self.process(imgs)
         imgs = np.array(imgs, dtype='float32')
+        s = time.time()
         features = self.infer(imgs)
+        print('人脸识别时间：%dms' % int((time.time() - s) * 1000))
         names = []
         probs = []
         for i in range(len(features)):
@@ -97,6 +102,7 @@ class Predictor:
                 prob = np.dot(feature, feature1) / (np.linalg.norm(feature) * np.linalg.norm(feature1))
                 results_dict[name] = prob
             results = sorted(results_dict.items(), key=lambda d: d[1], reverse=True)
+            print('人脸对比结果：', results)
             result = results[0]
             prob = float(result[1])
             probs.append(prob)
@@ -133,8 +139,10 @@ class Predictor:
 
 
 if __name__ == '__main__':
-    predictor = Predictor(args.mtcnn_model_path, args.mobilefacenet_model_path, args.face_db_path)
+    predictor = Predictor(args.mtcnn_model_path, args.mobilefacenet_model_path, args.face_db_path, threshold=args.threshold)
+    start = time.time()
     boxes, names = predictor.recognition(args.image_path)
-    print(boxes)
-    print(names)
+    print('预测的人脸位置：', boxes.astype(np.int_).tolist())
+    print('识别的人脸名称：', names)
+    print('总识别时间：%dms' % int((time.time() - start) * 1000))
     predictor.draw_face(args.image_path, boxes, names)

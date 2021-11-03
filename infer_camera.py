@@ -1,6 +1,7 @@
 import argparse
 import functools
 import os
+import time
 
 import cv2
 import numpy as np
@@ -14,7 +15,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('camera_id',                int,     0,                                  '使用的相机ID')
 add_arg('face_db_path',             str,     'face_db',                          '人脸库路径')
-add_arg('threshold',                float,   0.7,                                '判断相识度的阈值')
+add_arg('threshold',                float,   0.6,                                '判断相识度的阈值')
 add_arg('mobilefacenet_model_path', str,     'save_model/mobilefacenet.pth',     'MobileFaceNet预测模型的路径')
 add_arg('mtcnn_model_path',         str,     'save_model/mtcnn',                 'MTCNN预测模型的路径')
 args = parser.parse_args()
@@ -90,6 +91,7 @@ class Predictor:
                 prob = np.dot(feature, feature1) / (np.linalg.norm(feature) * np.linalg.norm(feature1))
                 results_dict[name] = prob
             results = sorted(results_dict.items(), key=lambda d: d[1], reverse=True)
+            print('人脸对比结果：', results)
             result = results[0]
             prob = float(result[1])
             probs.append(prob)
@@ -125,11 +127,19 @@ class Predictor:
 
 
 if __name__ == '__main__':
-    predictor = Predictor(args.mtcnn_model_path, args.mobilefacenet_model_path, args.face_db_path)
+    predictor = Predictor(args.mtcnn_model_path, args.mobilefacenet_model_path, args.face_db_path, threshold=args.threshold)
     cap = cv2.VideoCapture(args.camera_id)
     while True:
         ret, img = cap.read()
         if ret:
+            start = time.time()
             boxes, names = predictor.recognition(img)
-            predictor.draw_face(img, boxes, names)
-            print(names)
+            if boxes is not None:
+                predictor.draw_face(img, boxes, names)
+                print('预测的人脸位置：', boxes.astype('int32').tolist())
+                print('识别的人脸名称：', names)
+                print('总识别时间：%dms' % int((time.time() - start) * 1000))
+            else:
+                cv2.imshow("result", img)
+                cv2.waitKey(1)
+

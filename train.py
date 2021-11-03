@@ -74,8 +74,8 @@ def train():
 
     device = torch.device("cuda")
     # 获取模型
-    model = MobileFaceNet(scale=1.0)
-    metric_fc = ArcNet(1024, train_dataset.num_classes)
+    model = MobileFaceNet()
+    metric_fc = ArcNet(512, train_dataset.num_classes)
     if len(device_ids) > 1:
         model = DataParallel(model, device_ids=device_ids, output_device=device_ids[0])
         metric_fc = DataParallel(metric_fc, device_ids=device_ids, output_device=device_ids[0])
@@ -103,7 +103,7 @@ def train():
         optimizer_state = torch.load(os.path.join(args.resume, 'optimizer.pth'))
         optimizer.load_state_dict(optimizer_state)
         # 获取预训练的epoch数
-        last_epoch = optimizer_state['state'][0]['step']
+        last_epoch = int(re.findall("\d+", args.resume)[-1]) + 1
         if len(device_ids) > 1:
             model.module.load_state_dict(torch.load(os.path.join(args.resume, 'model_params.pth')))
             metric_fc.module.load_state_dict(torch.load(os.path.join(args.resume, 'metric_fc_params.pth')))
