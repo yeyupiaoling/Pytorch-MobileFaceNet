@@ -101,12 +101,11 @@ class Dataset(data.Dataset):
         assert (img is not None)
         label = self.imageData.get_label(key)
         assert (label is not None)
-        img = np.fromstring(img, dtype=np.uint8)
+        img = np.frombuffer(img, dtype=np.uint8)
         img = cv2.imdecode(img, cv2.IMREAD_COLOR)
         img = process(img, image_size=self.image_size, is_train=self.is_train)
-        label = np.array([label], np.int64)
         img = np.array(img, dtype='float32')
-        return img, np.array(int(label), dtype=np.int64)
+        return img, np.int64(label)
 
     def __len__(self):
         return len(self.keys)

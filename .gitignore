@@ -1,7 +1,7 @@
 *.pyc
 .idea/
 dataset/*
-!dataset/lfw_test.zip
+!dataset/lfw_test.txt
 !dataset/test.jpg
 save_model/*
 !save_model/mtcnn
