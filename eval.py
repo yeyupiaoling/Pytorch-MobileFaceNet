@@ -31,7 +31,7 @@ def main():
 
     model.eval()
     accuracy, threshold = eval(args, model)
-    print('准确率为：%f, 最优阈值为：%f' % (accuracy, threshold))
+    print(f'准确率为：{accuracy:.5f}, 最优阈值为：{threshold:.5f}')
 
 
 if __name__ == '__main__':

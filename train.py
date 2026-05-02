@@ -23,7 +23,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('gpus',             str,    '0',                      '训练使用的GPU序号')
 add_arg('batch_size',       int,    64,                       '训练的批量大小')
-add_arg('num_workers',      int,    0,                        '读取数据的线程数量')
+add_arg('num_workers',      int,    4,                        '读取数据的线程数量')
 add_arg('num_epoch',        int,    50,                       '训练的轮数')
 add_arg('learning_rate',    float,  1e-3,                     '初始学习率的大小')
 add_arg('train_root_path',  str,    'dataset/train_data',     '训练数据的根目录')
@@ -63,6 +63,9 @@ def save_model(args, model, metric_fc, optimizer, epoch_id):
 
 
 def train():
+    # 如果是Windows，args.num_workers必须为0
+    if os.name == 'nt':
+        args.num_workers = 0
     device_ids = [int(i) for i in args.gpus.split(',')]
     # 获取训练数据
     train_dataset = Dataset(args.train_root_path, is_train=True, image_size=112)
@@ -134,8 +137,8 @@ def train():
                 acc = np.mean((output == label).astype(int))
                 eta_sec = ((time.time() - start) * 1000) * (sum_batch - (epoch_id - last_epoch) * len(train_loader) - batch_id)
                 eta_str = str(timedelta(seconds=int(eta_sec / 1000)))
-                print('[%s] Train epoch %d, batch: %d/%d, loss: %f, accuracy: %f, lr: %f, eta: %s' % (
-                    datetime.now(), epoch_id, batch_id, len(train_loader), loss.item(), acc.item(), scheduler.get_lr()[0], eta_str))
+                print(f'{datetime.now()} Train epoch {epoch_id}/{args.num_epoch}, batch: {batch_id}/{len(train_loader)}, loss: {loss.item():.5f}, '
+                      f'acc: {acc.item()}, lr: {scheduler.get_lr()[0]}, eta: {eta_str}')
             start = time.time()
         scheduler.step()
         # 开始评估
@@ -143,7 +146,7 @@ def train():
         print('='*70)
         accuracy = test(args, model)
         model.train()
-        print('[{}] Test epoch {} Accuracy {:.5}'.format(datetime.now(), epoch_id, accuracy))
+        print(f'{datetime.now()} Test epoch {epoch_id}/{args.num_epoch} Accuracy {accuracy:.5f}')
         print('='*70)
 
         # 保存模型

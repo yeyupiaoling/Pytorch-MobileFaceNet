@@ -144,5 +144,5 @@ if __name__ == '__main__':
     boxes, names = predictor.recognition(args.image_path)
     print('预测的人脸位置：', boxes.astype(np.int_).tolist())
     print('识别的人脸名称：', names)
-    print('总识别时间：%dms' % int((time.time() - start) * 1000))
+    print(f'总识别时间：{int((time.time() - start) * 1000)}ms')
     predictor.draw_face(args.image_path, boxes, names)

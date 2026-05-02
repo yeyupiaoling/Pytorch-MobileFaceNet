@@ -144,7 +144,7 @@ def load_mx_rec(dataset_path, rec_path):
         shutil.rmtree('dataset/faces_emore', ignore_errors=True)
     finally:
         writer.close()
-    print('训练数据转换完成，总类别为：%d' % len(label_map))
+    print(f'训练数据转换完成，总类别为：{len(label_map)}')
 
 
 class DataSetWriter(object):
