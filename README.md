@@ -2,12 +2,29 @@
 
 本项目参考了[ArcFace](https://arxiv.org/abs/1801.07698)的损失函数结合MobileNet，意在开发一个模型较小，但识别准确率较高且推理速度快的一种人脸识别项目，该项目训练数据使用emore数据集，一共有85742个人，共5822653张图片，使用lfw-align-128数据集作为测试数据。
 
+
+# 环境
+ - Pytorch 2.11.0
+ - Python 3.11
+
+# 安装依赖
+ 1. 安装Pytorch。
+```
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu130
+```
+
+ 2. 安装其他依赖。
+```
+pip3 install -r requirements.txt
+```
+
+
 # 数据集准备
 本项目提供了标注文件，存放在`dataset`目录下，解压即可。另外需要下载下面这两个数据集，下载完解压到`dataset`目录下。
  - emore数据集[百度网盘](https://pan.baidu.com/s/1eXohwNBHbbKXh5KHyItVhQ)
  - lfw-align-128下载地址：[百度网盘](https://pan.baidu.com/s/1tFEX0yjUq3srop378Z1WMA) 提取码：b2ec
 
-然后执行下面命令，将提取人脸图片到`dataset/images`，并把整个数据集打包为二进制文件，这样可以大幅度的提高训练时数据的读取速度。
+然后执行下面命令，制作成训练数据的二进制文件，加快训练时读取速度。
 ```shell
 python create_dataset.py
 ```
