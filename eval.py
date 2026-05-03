@@ -26,7 +26,7 @@ def eval(args, model):
 
 def main():
     # 获取模型
-    model = torch.load(args.model_path)
+    model = torch.jit.load(args.model_path)
     model.to(torch.device("cuda"))
 
     model.eval()

@@ -22,7 +22,7 @@ from utils.utils import get_features, get_feature_dict, test_performance
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('gpus',             str,    '0',                      '训练使用的GPU序号')
-add_arg('batch_size',       int,    64,                       '训练的批量大小')
+add_arg('batch_size',       int,    128,                      '训练的批量大小')
 add_arg('num_workers',      int,    4,                        '读取数据的线程数量')
 add_arg('num_epoch',        int,    50,                       '训练的轮数')
 add_arg('learning_rate',    float,  1e-3,                     '初始学习率的大小')
@@ -106,7 +106,7 @@ def train():
         optimizer_state = torch.load(os.path.join(args.resume, 'optimizer.pth'))
         optimizer.load_state_dict(optimizer_state)
         # 获取预训练的epoch数
-        last_epoch = int(re.findall("\d+", args.resume)[-1]) + 1
+        last_epoch = int(args.resume.split('/')[-1].split('_')[-1]) + 1
         if len(device_ids) > 1:
             model.module.load_state_dict(torch.load(os.path.join(args.resume, 'model_params.pth')))
             metric_fc.module.load_state_dict(torch.load(os.path.join(args.resume, 'metric_fc_params.pth')))
@@ -138,7 +138,7 @@ def train():
                 eta_sec = ((time.time() - start) * 1000) * (sum_batch - (epoch_id - last_epoch) * len(train_loader) - batch_id)
                 eta_str = str(timedelta(seconds=int(eta_sec / 1000)))
                 print(f'{datetime.now()} Train epoch {epoch_id}/{args.num_epoch}, batch: {batch_id}/{len(train_loader)}, loss: {loss.item():.5f}, '
-                      f'acc: {acc.item()}, lr: {scheduler.get_lr()[0]}, eta: {eta_str}')
+                      f'acc: {acc.item()}, lr: {scheduler.get_last_lr()[0]:.5f}, eta: {eta_str}')
             start = time.time()
         scheduler.step()
         # 开始评估
