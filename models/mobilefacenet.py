@@ -1,4 +1,26 @@
-from torch.nn import Linear, Conv2d, BatchNorm1d, BatchNorm2d, PReLU, Sequential, Module, Flatten
+import torch
+from torch.nn import Linear, Conv2d, BatchNorm1d, BatchNorm2d, PReLU, Sequential, Module, Flatten, Dropout, AdaptiveAvgPool2d
+
+
+# SE注意力模块：学习通道间的重要性权重
+class SEModule(Module):
+    def __init__(self, channels, reduction=4):
+        super(SEModule, self).__init__()
+        mid_c = channels // reduction
+        self.avg_pool = AdaptiveAvgPool2d(1)
+        self.fc = Sequential(
+            Linear(channels, mid_c, bias=False),
+            PReLU(mid_c),
+            Linear(mid_c, channels, bias=False),
+        )
+
+    def forward(self, x):
+        b, c, _, _ = x.size()
+        # 全局平均池化 -> FC -> 激活 -> FC -> sigmoid
+        y = self.avg_pool(x).view(b, c)
+        y = self.fc(y)
+        y = torch.sigmoid(y).view(b, c, 1, 1)
+        return x * y
 
 
 class ConvBlock(Module):
@@ -44,28 +66,32 @@ class DepthWise(Module):
 
 
 class DepthWiseResidual(Module):
-    def __init__(self, in_c, out_c, kernel=(3, 3), stride=(2, 2), padding=(1, 1), groups=1):
+    def __init__(self, in_c, out_c, kernel=(3, 3), stride=(2, 2), padding=(1, 1), groups=1, use_se=False):
         super(DepthWiseResidual, self).__init__()
         self.conv = ConvBlock(in_c, out_c=groups, kernel=(1, 1), padding=(0, 0), stride=(1, 1))
         self.conv_dw = ConvBlock(groups, groups, groups=groups, kernel=kernel, padding=padding, stride=stride)
         self.project = LinearBlock(groups, out_c, kernel=(1, 1), padding=(0, 0), stride=(1, 1))
+        # 在残差分支中加入SE注意力
+        self.se = SEModule(out_c) if use_se else None
 
     def forward(self, x):
         short_cut = x
         x = self.conv(x)
         x = self.conv_dw(x)
         x = self.project(x)
+        if self.se is not None:
+            x = self.se(x)
         output = short_cut + x
         return output
 
 
 class Residual(Module):
-    def __init__(self, c, num_block, groups, kernel=(3, 3), stride=(1, 1), padding=(1, 1)):
+    def __init__(self, c, num_block, groups, kernel=(3, 3), stride=(1, 1), padding=(1, 1), use_se=False):
         super(Residual, self).__init__()
         modules = []
         for _ in range(num_block):
             modules.append(
-                DepthWiseResidual(c, c, kernel=kernel, padding=padding, stride=stride, groups=groups))
+                DepthWiseResidual(c, c, kernel=kernel, padding=padding, stride=stride, groups=groups, use_se=use_se))
         self.model = Sequential(*modules)
 
     def forward(self, x):
@@ -73,21 +99,23 @@ class Residual(Module):
 
 
 class MobileFaceNet(Module):
-    def __init__(self):
+    def __init__(self, embedding_size=512, dropout=0.2, use_se=False):
         super(MobileFaceNet, self).__init__()
         self.conv1 = ConvBlock(3, 64, kernel=(3, 3), stride=(2, 2), padding=(1, 1))
         self.conv2_dw = ConvBlock(64, 64, kernel=(3, 3), stride=(1, 1), padding=(1, 1), groups=64)
         self.conv_23 = DepthWise(64, 64, kernel=(3, 3), stride=(2, 2), padding=(1, 1), groups=128)
-        self.conv_3 = Residual(64, num_block=4, groups=128, kernel=(3, 3), stride=(1, 1), padding=(1, 1))
+        self.conv_3 = Residual(64, num_block=4, groups=128, kernel=(3, 3), stride=(1, 1), padding=(1, 1), use_se=use_se)
         self.conv_34 = DepthWise(64, 128, kernel=(3, 3), stride=(2, 2), padding=(1, 1), groups=256)
-        self.conv_4 = Residual(128, num_block=6, groups=256, kernel=(3, 3), stride=(1, 1), padding=(1, 1))
+        self.conv_4 = Residual(128, num_block=6, groups=256, kernel=(3, 3), stride=(1, 1), padding=(1, 1), use_se=use_se)
         self.conv_45 = DepthWise(128, 128, kernel=(3, 3), stride=(2, 2), padding=(1, 1), groups=512)
-        self.conv_5 = Residual(128, num_block=2, groups=256, kernel=(3, 3), stride=(1, 1), padding=(1, 1))
+        self.conv_5 = Residual(128, num_block=2, groups=256, kernel=(3, 3), stride=(1, 1), padding=(1, 1), use_se=use_se)
         self.conv_6_sep = ConvBlock(128, 512, kernel=(1, 1), stride=(1, 1), padding=(0, 0))
         self.conv_6_dw = LinearBlock(512, 512, groups=512, kernel=(7, 7), stride=(1, 1), padding=(0, 0))
         self.flatten = Flatten()
-        self.linear = Linear(512, 512, bias=False)
-        self.bn = BatchNorm1d(512)
+        self.linear = Linear(512, embedding_size, bias=False)
+        self.bn = BatchNorm1d(embedding_size)
+        # Dropout防止过拟合
+        self.dropout = Dropout(p=dropout)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -103,4 +131,6 @@ class MobileFaceNet(Module):
         x = self.flatten(x)
         x = self.linear(x)
         x = self.bn(x)
+        # 训练时使用Dropout，推理时自动关闭
+        x = self.dropout(x)
         return x

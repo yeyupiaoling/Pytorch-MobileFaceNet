@@ -1,6 +1,6 @@
 # MobileFaceNet
 
-本项目参考了[ArcFace](https://arxiv.org/abs/1801.07698)的损失函数结合MobileNet，意在开发一个模型较小，但识别准确率较高且推理速度快的一种人脸识别项目，该项目训练数据使用emore数据集，一共有85742个人，共5822653张图片，使用lfw-align-128数据集作为测试数据。
+本项目参考了[ArcFace](https://arxiv.org/abs/1801.07698)的损失函数结合MobileNet，意在开发一个模型较小，但识别准确率较高且推理速度快的一种人脸识别项目，并做了一定的改进，该项目训练数据使用emore数据集，一共有85742个人，共5822653张图片，使用lfw-align-128数据集作为测试数据。
 
 
 # 环境
@@ -81,3 +81,12 @@ python infer.py --image_path=temp/test.jpg
 ```shell
 python infer_camera.py --camera_id=0
 ```
+
+# 模型优化记录表
+
+| 操作 | 评估结果 |
+| --- | --- |
+| 原始项目效果 | 准确率为：0.83017, 最优阈值为：0.69486 |
+| 优化后 |  |
+| 优化后+SE模块 |   |
+| 优化后+SE模块+margin_scheduler |   |

@@ -6,3 +6,4 @@ dataset/*
 save_model/*
 !save_model/mtcnn
 !save_model/mobilefacenet.pth
+log/
