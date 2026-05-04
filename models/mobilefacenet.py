@@ -66,7 +66,7 @@ class DepthWise(Module):
 
 
 class DepthWiseResidual(Module):
-    def __init__(self, in_c, out_c, kernel=(3, 3), stride=(2, 2), padding=(1, 1), groups=1, use_se=False):
+    def __init__(self, in_c, out_c, kernel=(3, 3), stride=(2, 2), padding=(1, 1), groups=1, use_se=True):
         super(DepthWiseResidual, self).__init__()
         self.conv = ConvBlock(in_c, out_c=groups, kernel=(1, 1), padding=(0, 0), stride=(1, 1))
         self.conv_dw = ConvBlock(groups, groups, groups=groups, kernel=kernel, padding=padding, stride=stride)
@@ -86,7 +86,7 @@ class DepthWiseResidual(Module):
 
 
 class Residual(Module):
-    def __init__(self, c, num_block, groups, kernel=(3, 3), stride=(1, 1), padding=(1, 1), use_se=False):
+    def __init__(self, c, num_block, groups, kernel=(3, 3), stride=(1, 1), padding=(1, 1), use_se=True):
         super(Residual, self).__init__()
         modules = []
         for _ in range(num_block):
@@ -99,7 +99,7 @@ class Residual(Module):
 
 
 class MobileFaceNet(Module):
-    def __init__(self, embedding_size=512, dropout=0.2, use_se=False):
+    def __init__(self, embedding_size=512, dropout=0.2, use_se=True):
         super(MobileFaceNet, self).__init__()
         self.conv1 = ConvBlock(3, 64, kernel=(3, 3), stride=(2, 2), padding=(1, 1))
         self.conv2_dw = ConvBlock(64, 64, kernel=(3, 3), stride=(1, 1), padding=(1, 1), groups=64)

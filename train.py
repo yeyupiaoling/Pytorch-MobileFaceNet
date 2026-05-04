@@ -33,6 +33,7 @@ add_arg('train_root_path',      str,    'dataset/train_data',     '训练数据�
 add_arg('test_list_path',       str,    'dataset/lfw_test.txt',   '测试数据的数据列表路径')
 add_arg('save_model',           str,    'save_model/',            '模型保存的路径')
 add_arg('resume',               str,    None,                     '恢复训练，当为None则不使用恢复模型')
+add_arg('use_se',               bool,   True,                     '是否使用SE模块')
 add_arg('use_margin_scheduler', bool,   False,                    '是否使用动态调整损失函数Margin')
 args = parser.parse_args()
 
@@ -80,7 +81,7 @@ def train():
 
     device = torch.device("cuda")
     # 获取模型
-    model = MobileFaceNet()
+    model = MobileFaceNet(use_se=args.use_se)
     # 分类层：特征归一化+分类权重归一化，输出余弦相似度logits
     classifier = Classifier(512, train_dataset.num_classes)
     # AAM损失函数：在角度空间上增加margin提升判别性
