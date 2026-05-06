@@ -10,9 +10,9 @@ from detection.face_detect import MTCNN
 
 
 class Predictor:
-    def __init__(self, mtcnn_model_path, mobilefacenet_model_path, face_db_path, threshold=0.7):
+    def __init__(self, mtcnn_model_path, mobilefacenet_model_path, face_db_path, threshold=0.7, image_size=112):
         self.threshold = threshold
-        self.image_size = 112
+        self.image_size = image_size
         self.face_db_path = face_db_path
         self.mtcnn = MTCNN(model_path=mtcnn_model_path)
         self.device = torch.device("cuda")
