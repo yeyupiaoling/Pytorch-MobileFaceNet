@@ -5,7 +5,6 @@ import uuid
 from collections import namedtuple
 from pathlib import Path
 
-import cv2
 import numpy as np
 from tqdm import tqdm
 

@@ -38,16 +38,16 @@ python train.py
 
 训练输出如下：
 ```
-[2021-11-03 15:18:28.813591] Train epoch 9, batch: 6100/90979, loss: 1.215695, accuracy: 0.859375, lr: 0.000107, eta: 5 days, 5:28:26
-[2021-11-03 15:18:37.044353] Train epoch 9, batch: 6200/90979, loss: 0.908210, accuracy: 0.859375, lr: 0.000107, eta: 5 days, 6:35:02
-[2021-11-03 15:18:45.229030] Train epoch 9, batch: 6300/90979, loss: 0.964092, accuracy: 0.875000, lr: 0.000107, eta: 5 days, 9:17:21
-[2021-11-03 15:18:53.449567] Train epoch 9, batch: 6400/90979, loss: 1.208947, accuracy: 0.828125, lr: 0.000107, eta: 5 days, 12:41:06
-[2021-11-03 15:19:01.682437] Train epoch 9, batch: 6500/90979, loss: 1.081449, accuracy: 0.875000, lr: 0.000107, eta: 5 days, 10:29:44
-[2021-11-03 15:19:09.895995] Train epoch 9, batch: 6600/90979, loss: 1.277803, accuracy: 0.828125, lr: 0.000107, eta: 5 days, 12:29:05
-[2021-11-03 15:19:18.086872] Train epoch 9, batch: 6700/90979, loss: 1.308692, accuracy: 0.828125, lr: 0.000107, eta: 5 days, 7:23:03
-[2021-11-03 15:19:26.306897] Train epoch 9, batch: 6800/90979, loss: 1.474561, accuracy: 0.781250, lr: 0.000107, eta: 5 days, 8:20:23
-[2021-11-03 15:19:34.528685] Train epoch 9, batch: 6900/90979, loss: 1.295028, accuracy: 0.812500, lr: 0.000107, eta: 5 days, 5:54:56
-[2021-11-03 15:19:42.736712] Train epoch 9, batch: 7000/90979, loss: 1.474828, accuracy: 0.812500, lr: 0.000107, eta: 5 days, 8:32:33
+2026-05-04 11:13:18.832867 Train epoch 0/50, batch: 0/45490, loss: 18.79444, acc: 0.0, lr: 0.00001, eta: 25 days, 14:37:51
+2026-05-04 11:13:32.611387 Train epoch 0/50, batch: 100/45490, loss: 18.63379, acc: 0.0, lr: 0.00001, eta: 5 days, 23:32:17
+2026-05-04 11:13:46.402430 Train epoch 0/50, batch: 200/45490, loss: 18.69627, acc: 0.0, lr: 0.00001, eta: 5 days, 23:05:42
+2026-05-04 11:14:00.193215 Train epoch 0/50, batch: 300/45490, loss: 18.63806, acc: 0.0, lr: 0.00001, eta: 5 days, 23:58:55
+2026-05-04 11:14:13.993782 Train epoch 0/50, batch: 400/45490, loss: 18.68702, acc: 0.0, lr: 0.00001, eta: 5 days, 23:56:50
+2026-05-04 11:14:27.790523 Train epoch 0/50, batch: 500/45490, loss: 18.91446, acc: 0.0, lr: 0.00001, eta: 5 days, 23:38:44
+2026-05-04 11:14:41.593387 Train epoch 0/50, batch: 600/45490, loss: 18.51042, acc: 0.0, lr: 0.00001, eta: 5 days, 23:59:49
+2026-05-04 11:14:55.379825 Train epoch 0/50, batch: 700/45490, loss: 18.45938, acc: 0.0, lr: 0.00001, eta: 5 days, 23:52:34
+2026-05-04 11:15:09.188305 Train epoch 0/50, batch: 800/45490, loss: 18.62561, acc: 0.0, lr: 0.00001, eta: 5 days, 23:56:10
+2026-05-04 11:15:22.993479 Train epoch 0/50, batch: 900/45490, loss: 18.69341, acc: 0.0, lr: 0.00001, eta: 5 days, 23:41:08
 ```
 
 # 评估
@@ -63,7 +63,7 @@ python eval.py
 
 如果是通过图片路径预测的，请执行下面命令。
 ```shell
-python infer.py --image_path=temp/test.jpg
+python infer.py --image_path=dataset/test.jpg --face_db_path=face_db --threshold=0.5
 ```
 日志输出如下：
 ```
@@ -75,11 +75,11 @@ python infer.py --image_path=temp/test.jpg
 识别的人脸名称： ['迪丽热巴', '杨幂']
 总识别时间：82ms
 ```
-![识别结果](./dataset/result.jpg)
+![识别结果](./docs/result.jpg)
 
 如果是通过相机预测的，请执行下面命令。
 ```shell
-python infer_camera.py --camera_id=0
+python infer_camera.py --camera_id=0 --face_db_path=face_db --threshold=0.5
 ```
 
 # 模型优化记录表

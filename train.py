@@ -1,5 +1,4 @@
 import os
-import re
 import shutil
 import time
 from datetime import datetime, timedelta
@@ -10,6 +9,7 @@ from visualdl import LogWriter
 import torch
 from torch.utils.data import DataLoader
 from torchsummary import summary
+from loguru import logger
 
 from utils.reader import Dataset
 from models.aamloss import AAMLoss
@@ -48,23 +48,25 @@ def test(args, model):
     return accuracy
 
 
-def save_model(args, model, classifier, optimizer, epoch_id):
+def save_model(args, model, classifier, optimizer, epoch_id, accuracy, last_accuracy=0.0,):
     model_params_path = os.path.join(args.save_model, 'epoch_%d' % epoch_id)
-    if not os.path.exists(model_params_path):
-        os.makedirs(model_params_path)
+    os.makedirs(model_params_path, exist_ok=True)
     # 保存模型参数和优化方法参数
     torch.save(model.state_dict(), os.path.join(model_params_path, 'model_params.pth'))
     torch.save(classifier.state_dict(), os.path.join(model_params_path, 'classifier_params.pth'))
     torch.save(optimizer.state_dict(), os.path.join(model_params_path, 'optimizer.pth'))
+    with open(os.path.join(model_params_path, 'accuracy.txt'), 'w') as f:
+        f.write(str(accuracy))
+    logger.info(f"保存模型参数到：{model_params_path}")
     # 删除旧的模型
     old_model_path = os.path.join(args.save_model, 'epoch_%d' % (epoch_id - 3))
     if os.path.exists(old_model_path):
         shutil.rmtree(old_model_path)
     # 保存整个模型和参数
     all_model_path = os.path.join(args.save_model, 'mobilefacenet.pth')
-    if not os.path.exists(os.path.dirname(all_model_path)):
-        os.makedirs(os.path.dirname(all_model_path))
-    torch.jit.save(torch.jit.script(model), all_model_path)
+    if accuracy > last_accuracy:
+        torch.jit.save(torch.jit.script(model), all_model_path)
+        logger.info(f"出现更优的模型，当前准确率为：{accuracy:.4f}，之前准确率为：{last_accuracy:.4f}，保存预测模型：{all_model_path}") 
 
 
 def train():
@@ -77,7 +79,7 @@ def train():
                               batch_size=args.batch_size,
                               shuffle=True,
                               num_workers=args.num_workers)
-    print("[%s] 总数据类别为：%d" % (datetime.now(), train_dataset.num_classes))
+    logger.info(f"{datetime.now()} 总数据类别为：{train_dataset.num_classes}")
 
     device = torch.device("cuda")
     # 获取模型
@@ -111,11 +113,12 @@ def train():
         last_epoch = int(args.resume.split('/')[-1].split('_')[-1]) + 1
         model.load_state_dict(torch.load(os.path.join(args.resume, 'model_params.pth')))
         classifier.load_state_dict(torch.load(os.path.join(args.resume, 'classifier_params.pth')))
-        print('成功加载模型参数和优化方法参数')
+        logger.info('成功加载模型参数和优化方法参数')
 
     # 日志记录器
     writer = LogWriter(logdir='log/')
     train_step = 0
+    last_accuracy = 0.0
     # 开始训练
     sum_batch = len(train_loader) * (args.num_epoch - last_epoch)
     for epoch_id in range(last_epoch, args.num_epoch):
@@ -147,7 +150,7 @@ def train():
                 acc = np.mean((output_pred == label_np).astype(int))
                 eta_sec = ((time.time() - start) * 1000) * (sum_batch - (epoch_id - last_epoch) * len(train_loader) - batch_id)
                 eta_str = str(timedelta(seconds=int(eta_sec / 1000)))
-                print(f'{datetime.now()} Train epoch {epoch_id}/{args.num_epoch}, batch: {batch_id}/{len(train_loader)}, loss: {loss.item():.5f}, '
+                logger.info(f'{datetime.now()} Train epoch {epoch_id}/{args.num_epoch}, batch: {batch_id}/{len(train_loader)}, loss: {loss.item():.5f}, '
                       f'acc: {acc.item()}, lr: {scheduler.get_last_lr()[0]:.5f}, eta: {eta_str}')
                 # 记录训练损失和学习率
                 writer.add_scalar('Train/Loss', loss.item(), train_step)
@@ -158,16 +161,17 @@ def train():
             start = time.time()
         # 开始评估
         model.eval()
-        print('='*70)
+        logger.info('='*70)
         accuracy = test(args, model)
         model.train()
-        print(f'{datetime.now()} Test epoch {epoch_id}/{args.num_epoch} Accuracy {accuracy:.5f}')
+        logger.info(f'{datetime.now()} Test epoch {epoch_id}/{args.num_epoch} Accuracy {accuracy:.5f}')
         # 记录测试准确率
         writer.add_scalar('Test/Accuracy', accuracy, epoch_id)
-        print('='*70)
+        logger.info('='*70)
 
         # 保存模型
-        save_model(args, model, classifier, optimizer, epoch_id)
+        save_model(args, model, classifier, optimizer, epoch_id, accuracy, last_accuracy)
+        last_accuracy = accuracy
 
 
 if __name__ == '__main__':
