@@ -126,9 +126,9 @@ class Predictor:
         
         # 构建结果
         results = []
-        for idx, prob in zip(max_indices, max_probs):
+        for i, (idx, prob) in enumerate(zip(max_indices, max_probs)):
             prob_float = round(prob.item(), 4)
-            bbox = boxes[idx].astype(np.int64).tolist()[:4]
+            bbox = boxes[i].astype(np.int64).tolist()[:4]
             name = faces_db_names[idx]
             logger.info(f'人脸对比结果：{name} - 相似度: {prob_float:.4f}')
             
@@ -146,7 +146,21 @@ class Predictor:
         draw = ImageDraw.Draw(img)
         font_path = os.path.join(os.path.dirname(__file__), 'simfang.ttf')
         font = ImageFont.truetype(font_path, size)
-        draw.text((left, top), text, color, font=font)
+        
+        # 获取文字的边界框
+        text_bbox = draw.textbbox((left, top), text, font=font)
+        
+        # 绘制背景方块，添加一点内边距(padding)使得方块比文字大一点
+        padding = 2
+        rect_left = text_bbox[0] - padding
+        rect_top = text_bbox[1] - padding
+        rect_right = text_bbox[2] + padding
+        rect_bottom = text_bbox[3] + padding
+        draw.rectangle([rect_left, rect_top, rect_right, rect_bottom], fill=color)
+        
+        # 使用白色绘制文字，这样文字可以在背景块中清晰可见
+        draw.text((left, top), text, fill=(255, 255, 255), font=font)
+        
         return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
     # 画出人脸框和关键点

@@ -67,13 +67,19 @@ python infer.py --image_path=dataset/test.jpg --face_db_path=face_db --threshold
 ```
 日志输出如下：
 ```
-人脸检测时间：38ms
-人脸识别时间：11ms
-人脸对比结果： [('迪丽热巴', 0.7030987), ('杨幂', 0.36442137)]
-人脸对比结果： [('杨幂', 0.63616204), ('迪丽热巴', 0.3101096)]
-预测的人脸位置： [[272, 67, 328, 118, 1], [156, 80, 215, 134, 1]]
-识别的人脸名称： ['迪丽热巴', '杨幂']
-总识别时间：82ms
+-----------  Configuration Arguments -----------
+face_db_path: face_db
+image_path: dataset/test.jpg
+mobilefacenet_model_path: save_model/mobilefacenet.pth
+mtcnn_model_path: save_model/mtcnn
+threshold: 0.5
+------------------------------------------------
+2026-05-07 21:39:58.301 | INFO     | utils.predictor:__init__:24 - 模型加载完成
+2026-05-07 21:39:59.101 | INFO     | utils.predictor:update_face_db:30 - 人脸库更新完成
+2026-05-07 21:39:59.575 | INFO     | utils.predictor:recognition:133 - 人脸对比结果：迪丽热巴 - 相似度: 0.7469
+2026-05-07 21:39:59.575 | INFO     | utils.predictor:recognition:133 - 人脸对比结果：杨幂 - 相似度: 0.5755
+识别结果： [{'name': '迪丽热巴', 'prob': 0.7469, 'bbox': [267, 50, 323, 127]}, {'name': '杨幂', 'prob': 0.5755, 'bbox': [159, 58, 214, 133]}]
+总识别时间：474ms
 ```
 ![识别结果](./docs/result.jpg)
 
@@ -81,6 +87,23 @@ python infer.py --image_path=dataset/test.jpg --face_db_path=face_db --threshold
 ```shell
 python infer_camera.py --camera_id=0 --face_db_path=face_db --threshold=0.5
 ```
+
+# Android部署
+
+- `python3 model_to_android.py` 导出模型为Android可加载的格式，会将模型文件导出到Android项目的`assets`目录下。
+- 使用Android Studio打开Android项目，点击运行按钮，即可在设备上运行。
+
+效果图如下：
+
+![Android识别结果](docs/android_result.jpg)
+
+
+# C++部署
+
+项目代码和构建说明：
+- 项目代码在`cpp/`目录下
+- 构建说明和使用说明在[cpp/README.md](cpp/README.md)文件中
+
 
 # 模型优化记录表
 
