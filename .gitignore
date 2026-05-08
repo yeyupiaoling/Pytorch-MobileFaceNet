@@ -3,9 +3,10 @@
 dataset/*
 !dataset/lfw_test.txt
 !dataset/test.jpg
-save_model/*
-!save_model/mtcnn
-!save_model/mobilefacenet.pth
+face_db/*
+!face_db/迪丽热巴.jpg
+!face_db/杨幂.jpg
+save_model/epoch_*
 cpp/build/
 log/
 result.jpg

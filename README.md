@@ -111,5 +111,5 @@ python infer_camera.py --camera_id=0 --face_db_path=face_db --threshold=0.5
 |---------------------------|---------|
 | 上一个版本                     | 0.83017 |
 | 优化后                       |         |
-| 优化后+SE模块                  |         |
+| 优化后+SE模块                  | 0.92683 |
 | 优化后+SE模块+margin_scheduler |         |
