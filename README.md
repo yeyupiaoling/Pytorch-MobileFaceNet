@@ -50,6 +50,10 @@ python train.py
 2026-05-04 11:15:22.993479 Train epoch 0/50, batch: 900/45490, loss: 18.69341, acc: 0.0, lr: 0.00001, eta: 5 days, 23:41:08
 ```
 
+执行`visualdl --logdir=./log/`可以可视化训练过程，然后打开地址`http://localhost:8040/`查看，如下图：
+
+![VisualDL](./docs/log.jpg)
+
 # 评估
 
 执行`eval.py`即可，更多训练参数请查看代码。
@@ -112,4 +116,4 @@ python infer_camera.py --camera_id=0 --face_db_path=face_db --threshold=0.5
 | 上一个版本                     | 0.83017 |
 | 优化后                       |         |
 | 优化后+SE模块                  | 0.92683 |
-| 优化后+SE模块+margin_scheduler |         |
+| 优化后+SE模块+margin_scheduler | 0.92733 |
