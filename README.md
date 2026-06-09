@@ -114,6 +114,6 @@ python infer_camera.py --camera_id=0 --face_db_path=face_db --threshold=0.5
 | 优化方式                      | 准确率     |
 |---------------------------|---------|
 | 上一个版本                     | 0.83017 |
-| 优化后                       |         |
+| 优化后                       | 0.92483 |
 | 优化后+SE模块                  | 0.92683 |
 | 优化后+SE模块+margin_scheduler | 0.92733 |
